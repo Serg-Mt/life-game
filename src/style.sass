@@ -14,11 +14,20 @@ header
     &[value="#{ids.$runningState}"] ~ ##{ids.$stopButtonId}
       display: revert
 
-main 
+main
   canvas
     width: 100%
     aspect-ratio: 1
-    
-canvas#graph
-  position: absolute
-  
+
+// canvas#graph
+//   position:
+
+##{ids.$infoContainerId}
+  font-size: x-small
+  font-family: monospace
+  z-index: 2
+  position: fixed
+  right: 0
+  bottom: 0
+  color: yellow
+  background: black

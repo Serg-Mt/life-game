@@ -16,7 +16,7 @@ function start() {
   simulationManager.start();
 }
 
-generatorSelector.addEventListener('change', ev => simulationManager.setGenerator(generators[+(ev.target as HTMLSelectElement).value]));
+generatorSelector.addEventListener('change', ev => simulationManager.setGenerator(generators[+(ev.target as HTMLSelectElement).value][1]));
 algorithmsSelector.addEventListener('change', ev => simulationManager.setAlgo(algorithms[+(ev.target as HTMLSelectElement).value]));
 renderSelector.addEventListener('change', ev => simulationManager.setRenderer(renders[+(ev.target as HTMLSelectElement).value]));
 startButton.addEventListener('click', start);

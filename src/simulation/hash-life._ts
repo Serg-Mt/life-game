@@ -1,0 +1,407 @@
+import type { SimulationStrategyItem, Point, SimulationStats } from '../types';
+
+// ==========================================
+// HashLife Implementation Components
+// ==========================================
+
+// Ключ для кеширования узлов
+type NodeId = number;
+
+// Кеш для канонических узлов (Interning)
+// Map<hash_string, TreeNode>
+const nodeCache = new Map<string, TreeNode>();
+// Кеш результатов эволюции
+// Map<node_id, TreeNode>
+const evolutionCache = new Map<NodeId, TreeNode>();
+
+let uniqueIdCounter = 0;
+
+class TreeNode {
+  readonly id: NodeId;
+  readonly level: number;
+  readonly population: number;
+  
+  // Дети
+  readonly nw: TreeNode;
+  readonly ne: TreeNode;
+  readonly sw: TreeNode;
+  readonly se: TreeNode;
+
+  // Разрешаем null в конструкторе для инициализации ON/OFF
+  constructor(nw: TreeNode | null, ne: TreeNode | null, sw: TreeNode | null, se: TreeNode | null) {
+    // Приводим типы, так как мы гарантируем, что у узлов level > 0 дети всегда есть,
+    // а у level 0 (ON/OFF) мы никогда не будем обращаться к детям.
+    this.nw = nw as TreeNode;
+    this.ne = ne as TreeNode;
+    this.sw = sw as TreeNode;
+    this.se = se as TreeNode;
+    
+    this.id = uniqueIdCounter++;
+    
+    // ПРОВЕРКА: вычисляем уровень только если передан дочерний узел
+    if (nw) {
+      this.level = nw.level + 1;
+      // @ts-ignore (на случай если другие null, хотя по логике они всегда вместе)
+      this.population = nw.population + ne.population + sw.population + se.population;
+    } else {
+      // Значения по умолчанию для ON/OFF (будут перезаписаны в их конструкторах)
+      this.level = 0;
+      this.population = 0;
+    }
+  }
+}
+
+// Базовые листья (Level 0)
+const ON = new class extends TreeNode {
+  constructor() { 
+    super(null, null, null, null); 
+    // Перезаписываем свойства для живой клетки
+    // @ts-ignore
+    this.level = 0; this.population = 1; this.id = uniqueIdCounter++;
+  }
+}();
+
+const OFF = new class extends TreeNode {
+  constructor() { 
+    super(null, null, null, null); 
+    // Перезаписываем свойства для мертвой клетки
+    // @ts-ignore
+    this.level = 0; this.population = 0; this.id = uniqueIdCounter++;
+  }
+}();
+
+
+
+// Создание канонического узла
+function createNode(nw: TreeNode, ne: TreeNode, sw: TreeNode, se: TreeNode): TreeNode {
+  if (nw.level !== ne.level || ne.level !== sw.level || sw.level !== se.level) {
+    throw new Error("Children must be of the same level");
+  }
+
+  const hash = `${nw.id}:${ne.id}:${sw.id}:${se.id}`;
+  const existing = nodeCache.get(hash);
+  if (existing) return existing;
+
+  const node = new TreeNode(nw, ne, sw, se);
+  nodeCache.set(hash, node);
+  return node;
+}
+
+// Получение пустого узла заданного уровня
+const emptyCache = new Map<number, TreeNode>();
+emptyCache.set(0, OFF);
+
+function getEmptyNode(level: number): TreeNode {
+  if (level === 0) return OFF;
+  if (emptyCache.has(level)) return emptyCache.get(level)!;
+
+  const child = getEmptyNode(level - 1);
+  const node = createNode(child, child, child, child);
+  emptyCache.set(level, node);
+  return node;
+}
+
+// ==========================================
+// Simulation Logic
+// ==========================================
+
+// Расчет следующего поколения для 4x4 (Level 2) -> 2x2 (Level 1)
+// Прямая симуляция
+function life4x4(node: TreeNode): TreeNode {
+  // Для удобства развернем 4x4 сетку в массив
+  // node.level = 2
+  // children level = 1
+  // grand children level = 0 (ON/OFF)
+  
+  const cells: number[] = [];
+  
+  // Собираем 16 значений
+  [node.nw, node.ne, node.sw, node.se].forEach(sub => {
+    [sub.nw, sub.ne, sub.sw, sub.se].forEach(leaf => {
+      cells.push(leaf === ON ? 1 : 0);
+    });
+  });
+
+  // cells индексы:
+  // 0  1  4  5
+  // 2  3  6  7
+  // 8  9  12 13
+  // 10 11 14 15
+  // Но порядок forEach: NW(nw,ne,sw,se), NE(...), SW(...), SE(...)
+  // Визуально сетка 4x4:
+  //  0  1 |  4  5
+  //  2  3 |  6  7
+  // ------+------
+  //  8  9 | 12 13
+  // 10 11 | 14 15
+  
+  // Нам нужно вычислить центральный 2x2 блок: индексы 3, 6, 9, 12 в нашей 1D раскладке? 
+  // Нет, это сложно. Проще по координатам.
+  
+  const get = (x: number, y: number) => {
+     // x, y in 0..3
+     const blockX = x < 2 ? 0 : 1;
+     const blockY = y < 2 ? 0 : 1;
+     const subNode = [node.nw, node.ne, node.sw, node.se][blockY * 2 + blockX];
+     
+     const innerX = x % 2;
+     const innerY = y % 2;
+     const leaf = [subNode.nw, subNode.ne, subNode.sw, subNode.se][innerY * 2 + innerX];
+     return leaf === ON ? 1 : 0;
+  };
+
+  const nextState = (x: number, y: number) => {
+    let neighbors = 0;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        neighbors += get(x + dx, y + dy);
+      }
+    }
+    const alive = get(x, y);
+    if (alive) return (neighbors === 2 || neighbors === 3) ? ON : OFF;
+    return (neighbors === 3) ? ON : OFF;
+  };
+
+  // Вычисляем центр (1,1), (2,1), (1,2), (2,2)
+  return createNode(
+    nextState(1, 1), nextState(2, 1),
+    nextState(1, 2), nextState(2, 2)
+  );
+}
+
+// Основная функция рекурсии (возвращает узел уровня k-1, сдвинутый на 1 шаг времени)
+function evolve(node: TreeNode): TreeNode {
+  if (evolutionCache.has(node.id)) {
+    return evolutionCache.get(node.id)!;
+  }
+
+  let result: TreeNode;
+
+  if (node.level === 2) {
+    result = life4x4(node);
+  } else {
+    // Рекурсивный шаг для уровня > 2
+    // Нам нужно создать 9 перекрывающихся квадратов уровня k-1
+    // n00 n01 n02
+    // n10 n11 n12
+    // n20 n21 n22
+    
+    const n00 = node.nw.nw; const n01 = node.nw.ne; const n02 = node.ne.nw; const n03 = node.ne.ne;
+    const n10 = node.nw.sw; const n11 = node.nw.se; const n12 = node.ne.sw; const n13 = node.ne.se;
+    const n20 = node.sw.nw; const n21 = node.sw.ne; const n22 = node.se.nw; const n23 = node.se.ne;
+    const n30 = node.sw.sw; const n31 = node.sw.se; const n32 = node.se.sw; const n33 = node.se.se;
+
+    // Собираем 9 узлов уровня k-1
+    const c00 = createNode(n00, n01, n10, n11);
+    const c01 = createNode(n01, n02, n11, n12);
+    const c02 = createNode(n02, n03, n12, n13);
+    
+    const c10 = createNode(n10, n11, n20, n21);
+    const c11 = createNode(n11, n12, n21, n22); // Center
+    const c12 = createNode(n12, n13, n22, n23);
+    
+    const c20 = createNode(n20, n21, n30, n31);
+    const c21 = createNode(n21, n22, n31, n32);
+    const c22 = createNode(n22, n23, n32, n33);
+
+    // Вычисляем следующее поколение для этих 9 узлов
+    // Получаем 9 узлов уровня k-2
+    const next00 = evolve(c00);
+    const next01 = evolve(c01);
+    const next02 = evolve(c02);
+    const next10 = evolve(c10);
+    const next11 = evolve(c11);
+    const next12 = evolve(c12);
+    const next20 = evolve(c20);
+    const next21 = evolve(c21);
+    const next22 = evolve(c22);
+
+    // Собираем 4 узла уровня k-1 из результатов
+    const resNW = createNode(next00, next01, next10, next11);
+    const resNE = createNode(next01, next02, next11, next12);
+    const resSW = createNode(next10, next11, next20, next21);
+    const resSE = createNode(next11, next12, next21, next22);
+
+    result = createNode(resNW, resNE, resSW, resSE);
+  }
+
+  evolutionCache.set(node.id, result);
+  return result;
+}
+
+// ==========================================
+// Strategy Class
+// ==========================================
+
+export class HashLifeStrategy implements SimulationStrategyItem {
+  static name = "HashLife (Quadtree) Algorithm";
+
+  private root: TreeNode;
+  private lastStepTime = 0;
+
+  constructor(fill: Iterable<Point>) {
+    // Инициализация пустым листом
+    this.root = OFF;
+
+    // Заполнение
+    for (const p of fill) {
+      this.set(p.x, p.y);
+    }
+  }
+
+  // Расширение мира, пока точка не попадет внутрь
+  private ensureBounds(x: number, y: number) {
+    const maxCoord = Math.pow(2, this.root.level - 1);
+    
+    // Пока координаты выходят за пределы текущего квадрата [-size, size)
+    while (x < -maxCoord || x >= maxCoord || y < -maxCoord || y >= maxCoord) {
+      const empty = getEmptyNode(this.root.level - 1);
+      // Расширяем, сохраняя центр (0,0) примерно в центре структур
+      // Но HashLife обычно расширяет в сторону центра пустоты.
+      // Сделаем простое концентрическое расширение:
+      // Новый корень уровня k+1, старый корень становится одним из 4 детей,
+      // остальные пустые. НО нам нужно, чтобы (0,0) оставался валидным.
+      // Предполагаем, что root покрывает [-M, M).
+      // Чтобы расширить до [-2M, 2M), старый корень должен стать одним из внутренних блоков
+      // более сложной структуры?
+      
+      // Стандартный трюк: оборачиваем root в центр нового большего root
+      // Old Root (Level k) -> New Root (Level k+1)
+      // NW=E, NE=E
+      // SW=E, SE=E 
+      // Такое расширение смещает координаты.
+      
+      // Правильный способ центрированного расширения:
+      // Создаем border из пустых узлов вокруг старого root.
+      // Root (k) -> New Root (k+1)
+      // Составлен из:
+      // nw: create(empty, empty, empty, root.nw) 
+      // ... это сложно с координатами.
+      
+      // Упрощение: используем Quadtree, который всегда имеет (0,0) в центре.
+      // Root level K покрывает [-2^(K-1), 2^(K-1)).
+      
+      const k = this.root.level;
+      const bg = getEmptyNode(k); // пустой узел уровня K
+      
+      // Новый корень уровня K+1. Центр остается (0,0).
+      // nw = node(bg.nw, bg.ne, bg.sw, root.nw) - нет
+      
+      // Мы просто создаем пустую рамку вокруг текущего root.
+      // createNode ожидает детей уровня K.
+      // Наш root уровня K.
+      // Нам нужен root уровня K+1.
+      // Дети должны быть уровня K.
+      // Дети нового корня:
+      // NW: [empty(k-1), empty(k-1), empty(k-1), root.nw] -> это сместит центр
+      
+      // Корректное центрированное расширение (Pad):
+      // Если root имеет детей nw, ne, sw, se (уровень k-1)
+      // Новый root (k+1) будет иметь детей (k):
+      // NW = create(empty(k-1), empty(k-1), empty(k-1), root.nw)
+      // NE = create(empty(k-1), empty(k-1), root.ne, empty(k-1))
+      // SW = create(empty(k-1), root.sw, empty(k-1), empty(k-1))
+      // SE = create(root.se, empty(k-1), empty(k-1), empty(k-1))
+      // ^ Это правильно, если мы хотим "раздвинуть" детей. Но это ломает структуру самого узла.
+      
+      // Проще:
+      const border = getEmptyNode(this.root.level);
+      this.root = createNode(
+        createNode(border.nw, border.ne, border.sw, this.root.nw),
+        createNode(border.nw, border.ne, this.root.ne, border.se),
+        createNode(border.nw, this.root.sw, border.sw, border.se),
+        createNode(this.root.se, border.ne, border.sw, border.se)
+      );
+      // После этого maxCoord удваивается
+      return this.ensureBounds(x, y); // Рекурсивная проверка, вдруг мало
+    }
+  }
+
+  private set(x: number, y: number) {
+    if (this.root.level === 0) {
+      // Инициализируем чем-то минимальным, если пусто
+      this.root = getEmptyNode(1); 
+    }
+    
+    this.ensureBounds(x, y);
+    this.root = this.setRec(this.root, x, y);
+  }
+
+  private setRec(node: TreeNode, x: number, y: number): TreeNode {
+    if (node.level === 0) {
+      return ON;
+    }
+
+    const offset = Math.pow(2, node.level - 2);
+    const nw = node.nw; const ne = node.ne;
+    const sw = node.sw; const se = node.se;
+
+    if (x < 0) {
+      if (y < 0) return createNode(this.setRec(nw, x + offset, y + offset), ne, sw, se);
+      else       return createNode(nw, ne, this.setRec(sw, x + offset, y - offset), se);
+    } else {
+      if (y < 0) return createNode(nw, this.setRec(ne, x - offset, y + offset), sw, se);
+      else       return createNode(nw, ne, sw, this.setRec(se, x - offset, y - offset));
+    }
+  }
+
+  nextStep() {
+    // const start = performance.now();
+    
+    // 1. Проверяем, нужно ли расширить мир перед эволюцией
+    // Если живые клетки касаются границ, результат эволюции может выйти за пределы
+    if (this.root.population > 0) {
+       // Грубая эвристика: если рамка слишком тесная, расширяем
+       // В HashLife обычно просто всегда расширяют и потом сжимают
+       // Расширяем дважды, чтобы гарантировать корректную обработку краев при evolve
+       const border = getEmptyNode(this.root.level);
+       this.root = createNode(
+         createNode(border.nw, border.ne, border.sw, this.root.nw),
+         createNode(border.nw, border.ne, this.root.ne, border.se),
+         createNode(border.nw, this.root.sw, border.sw, border.se),
+         createNode(this.root.se, border.ne, border.sw, border.se)
+       );
+       // Еще раз, чтобы evolve(root) вернул узел того же размера, что и был до расширения
+       const border2 = getEmptyNode(this.root.level);
+       this.root = createNode(
+         createNode(border2.nw, border2.ne, border2.sw, this.root.nw),
+         createNode(border2.nw, border2.ne, this.root.ne, border2.se),
+         createNode(border2.nw, this.root.sw, border2.sw, border2.se),
+         createNode(this.root.se, border2.ne, border2.sw, border2.se)
+       );
+    }
+
+    // 2. Эволюция
+    // evolve(node K) -> node K-1 (сдвинутый на 1 тик вперед)
+    this.root = evolve(this.root);
+    
+    // this.lastStepTime = performance.now() - start;
+  }
+
+  *getLiveCells(): Iterable<Point> {
+    yield* this.iterateRec(this.root, 0, 0);
+  }
+
+  private *iterateRec(node: TreeNode, x: number, y: number): Iterable<Point> {
+    if (node.population === 0) return;
+    
+    if (node.level === 0) {
+      if (node === ON) yield { x, y };
+      return;
+    }
+
+    const offset = Math.pow(2, node.level - 2);
+    yield* this.iterateRec(node.nw, x - offset, y - offset);
+    yield* this.iterateRec(node.ne, x + offset, y - offset);
+    yield* this.iterateRec(node.sw, x - offset, y + offset);
+    yield* this.iterateRec(node.se, x + offset, y + offset);
+  }
+
+  getStats(): SimulationStats {
+    return {
+      stepTime: this.lastStepTime,
+      population: this.root.population
+    };
+  }
+}

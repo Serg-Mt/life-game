@@ -8,3 +8,4 @@ export function random(width: number, height: number) {
     );
 
 }
+

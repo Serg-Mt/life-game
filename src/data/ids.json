@@ -6,5 +6,6 @@
   "runningState": "run",
   "stoppingState": "stop",
   "startButtonId": "start",
-  "stopButtonId": "stop"
+  "stopButtonId": "stop",
+  "infoContainerId": "ic"
 }

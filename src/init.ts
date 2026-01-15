@@ -19,7 +19,7 @@ function fillSelectElement(select: HTMLSelectElement, values: string[]) {
   (select.firstElementChild as HTMLOptionElement).selected = true;
 }
 
-fillSelectElement(generatorSelector, generators.map(({ name }) => name));
+fillSelectElement(generatorSelector, generators.map(([ name ]) => name));
 fillSelectElement(algorithmsSelector, algorithms.map(({ name }) => name));
 fillSelectElement(renderSelector, renders.map(({ name }) => name));
 

@@ -33,3 +33,4 @@ export function gliderGun(): Point[] {
     y: y + offsetY
   }));
 };
+

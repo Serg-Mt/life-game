@@ -1,4 +1,4 @@
-import { generatorSelectId, algorithmsSelectId, renderSelectId, startButtonId, stopButtonId, stateId } from './data/ids.json'  with {type: "json"};
+import { generatorSelectId, algorithmsSelectId, renderSelectId, startButtonId, stopButtonId, stateId, infoContainerId } from './data/ids.json'  with {type: "json"};
 
 
 export const
@@ -9,4 +9,4 @@ export const
   startButton = document.querySelector('#' + startButtonId) as HTMLButtonElement,
   stopButton = document.querySelector('#' + stopButtonId) as HTMLButtonElement,
   stateInput = document.querySelector('#' + stateId) as HTMLInputElement,
-  output = document.querySelector('output') as HTMLOutputElement;
+  infoContainer = document.querySelector('#' + infoContainerId) as HTMLOutputElement;

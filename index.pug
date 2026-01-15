@@ -12,7 +12,17 @@ html(lang="en")
       select(id=renderSelectId)
       button(id=startButtonId) START
       button(id=stopButtonId) STOP
-      output ___
+
+      div(id=infoContainerId)
+        span
+        | &nbsp;calc/&nbsp;
+        span
+        | &nbsp;ms
+        br
+        span
+        | &nbsp;render/s ∑  
+        span
+        | &nbsp;ms
       | gen/s
         
     main
