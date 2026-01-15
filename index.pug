@@ -1,0 +1,20 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Document
+  body
+    header
+      input(type="hidden",id=stateId/*,value=stoppingState*/)
+      select(id=generatorSelectId) 
+      select(id=algorithmsSelectId)
+      select(id=renderSelectId)
+      button(id=startButtonId) START
+      button(id=stopButtonId) STOP
+      output ___
+      | gen/s
+        
+    main
+    //- canvas#graph(width=2000,height=2000 )
+    script(type="module",src="/src/main.ts")

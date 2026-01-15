@@ -1,0 +1,10 @@
+{
+  "generatorSelectId": "gen",
+  "algorithmsSelectId": "al",
+  "renderSelectId": "rs",
+  "stateId": "st",
+  "runningState": "run",
+  "stoppingState": "stop",
+  "startButtonId": "start",
+  "stopButtonId": "stop"
+}

@@ -1,0 +1,24 @@
+// @use 'global' as *
+@use './data/ids.json' as ids
+
+body
+  margin: 0
+header
+  padding: 0 1em
+  button
+    display: none
+
+  input##{ids.$stateId}
+    &[value="#{ids.$stoppingState}"] ~ ##{ids.$startButtonId}
+      display: revert
+    &[value="#{ids.$runningState}"] ~ ##{ids.$stopButtonId}
+      display: revert
+
+main 
+  canvas
+    width: 100%
+    aspect-ratio: 1
+    
+canvas#graph
+  position: absolute
+  
