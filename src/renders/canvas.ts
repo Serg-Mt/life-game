@@ -8,9 +8,9 @@ export class CanvasRenderer extends RendererStrategyClass {
 
   createNewElement() {
     this.cellSize = 4;
-    console.log('createNewElement', { this: this });
+    // console.log('createNewElement', { this: this });
     const canvas = document.createElement('canvas');
-    console.log(this.w, this.cellSize, this.h, this.cellSize)
+    // console.log(this.w, this.cellSize, this.h, this.cellSize)
     canvas.width = this.w * this.cellSize;
     canvas.height = this.h * this.cellSize;
     this.container.appendChild(canvas);
@@ -29,7 +29,7 @@ export class CanvasRenderer extends RendererStrategyClass {
     const
       cellSizeX = this.ctx.canvas.width / this.w,
       cellSizeY = this.ctx.canvas.height / this.h;
-    console.log({ cellSizeX, cellSizeY }, { this: this }, this.ctx.canvas.width);
+    // console.log({ cellSizeX, cellSizeY }, { this: this }, this.ctx.canvas.width);
 
     this.ctx.fillStyle = '#00ff00';
     for (const cell of cells) {

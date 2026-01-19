@@ -26,7 +26,7 @@ export class MapStrategy implements SimulationStrategyItem {
 
 
 
-  constructor(fill:Iterable<Point>) {
+  constructor(fill: Iterable<Point>) {
     // console.log('Начальное заполнение');
     for (const { x, y } of fill)
       this.cells.set(/* @__INLINE__ */pack(x, y), { x, y, alive: true, neighbors: 0 });
@@ -50,10 +50,11 @@ export class MapStrategy implements SimulationStrategyItem {
         let
           x = X + dx,
           y = Y + dy,
-          cell = this.cells.get(/* @__INLINE__ */pack(x, y));
+          coords = /* @__INLINE__ */pack(x, y),
+          cell = this.cells.get(coords);
         if (!cell) {
           cell = { x, y, alive: false, neighbors: 0 };
-          this.cells.set(/* @__INLINE__ */pack(x, y), cell);
+          this.cells.set(coords, cell);
         }
         cell.neighbors++;
       }
@@ -98,7 +99,5 @@ export class MapStrategy implements SimulationStrategyItem {
   }
 
   getLiveCells() { return this.cells.values().filter(c => c.alive); }
-  // getStats(): SimulationStats {
-  //   return { stepTime: this.lastStepTime, population: this.cells.size };
-  // }
+
 }
