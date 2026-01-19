@@ -31,8 +31,8 @@ export class SimulationManager {
 
   public eventTarget = new EventTarget;
 
-  w = 200;
-  h = 200;
+  w = 500;
+  h = 500;
 
   #isRunning = false;
 

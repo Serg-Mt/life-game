@@ -1,7 +1,7 @@
 import { RendererStrategyClass, type Point, type RendererStrategyClassType } from '../types';
 
 export class WebGLRenderer extends RendererStrategyClass {
-  static name = "WebGL 2.0 (Instanced)";
+  static name = "WebGL 2.0";
 
   declare private gl: WebGL2RenderingContext;
   private program!: WebGLProgram;
