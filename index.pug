@@ -6,13 +6,16 @@ html(lang="en")
     title Document
   body
     header
+      span(id=x) 
+      | ×
+      span(id=y)
       input(type="hidden",id=stateId/*,value=stoppingState*/)
       select(id=generatorSelectId) 
       select(id=algorithmsSelectId)
       select(id=renderSelectId)
       button(id=startButtonId) START
       button(id=stopButtonId) STOP
-
+      
       div(id=infoContainerId)
         span
         | &nbsp;calc /&nbsp;

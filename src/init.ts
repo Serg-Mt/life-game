@@ -1,6 +1,7 @@
-import { algorithmsSelector, generatorSelector, renderSelector, /* startButton */ } from './dom';
+import { algorithmsSelector, generatorSelector, renderSelector, /* startButton, */ xSpan, ySpan } from './dom';
 
 import { generators } from './generators';
+import { simulationManager } from './manager';
 import { renders } from './renders';
 import { algorithms } from './simulation';
 
@@ -24,6 +25,8 @@ export function fillSelects() {
   fillSelectElement(generatorSelector, generators.map(([name]) => name));
   fillSelectElement(algorithmsSelector, algorithms.map(({ name }) => name));
   fillSelectElement(renderSelector, renders.map(({ name }) => name));
+  xSpan.textContent = simulationManager.w.toLocaleString();
+  ySpan.textContent = simulationManager.h.toLocaleString();
 }
 
 // simulationManager.setGenerator(generators[0]);

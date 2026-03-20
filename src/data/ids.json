@@ -7,5 +7,7 @@
   "stoppingState": "stop",
   "startButtonId": "start",
   "stopButtonId": "stop",
-  "infoContainerId": "ic"
+  "infoContainerId": "ic",
+  "x": "x",
+  "y": "y"
 }
