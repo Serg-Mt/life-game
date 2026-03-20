@@ -1,4 +1,6 @@
 import { RendererStrategyClass, type Point, type RendererStrategyClassType } from '../types';
+import vsSource from './webgl.vert.glsl?raw'
+import fsSource from './webgl.frag.glsl?raw';
 
 export class WebGLRenderer extends RendererStrategyClass {
   static name = "WebGL 2.0";
@@ -49,36 +51,36 @@ export class WebGLRenderer extends RendererStrategyClass {
   private initShaders() {
     // Vertex Shader
     // Рисует квадрат 1x1 и смещает его согласно instanceData (a_offset)
-    const vsSource = `#version 300 es
-    in vec2 a_position;    // Вершины самого квадрата (0..1)
-    in vec2 a_offset;      // Координаты клетки (x, y) - инстанс
+    // const vsSource = `#version 300 es
+    // in vec2 a_position;    // Вершины самого квадрата (0..1)
+    // in vec2 a_offset;      // Координаты клетки (x, y) - инстанс
     
-    uniform vec2 u_resolution;
+    // uniform vec2 u_resolution;
     
-    void main() {
-      // Позиция пикселя = позиция клетки + вершина квадрата
-      vec2 pos = a_offset + a_position;
+    // void main() {
+    //   // Позиция пикселя = позиция клетки + вершина квадрата
+    //   vec2 pos = a_offset + a_position;
       
-      // Преобразуем из пространства сетки (0..W, 0..H) в Clip Space (-1..1)
-      vec2 zeroToOne = pos / u_resolution;
-      vec2 zeroToTwo = zeroToOne * 2.0;
-      vec2 clipSpace = zeroToTwo - 1.0;
+    //   // Преобразуем из пространства сетки (0..W, 0..H) в Clip Space (-1..1)
+    //   vec2 zeroToOne = pos / u_resolution;
+    //   vec2 zeroToTwo = zeroToOne * 2.0;
+    //   vec2 clipSpace = zeroToTwo - 1.0;
       
-      // WebGL координаты: Y вверх, а у нас Y вниз, поэтому переворачиваем Y
-      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-    }
-    `;
+    //   // WebGL координаты: Y вверх, а у нас Y вниз, поэтому переворачиваем Y
+    //   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+    // }
+    // `;
 
     // Fragment Shader
-    const fsSource = `#version 300 es
-    precision mediump float;
-    uniform vec4 u_color;
-    out vec4 outColor;
+    // const fsSource = `#version 300 es
+    // precision mediump float;
+    // uniform vec4 u_color;
+    // out vec4 outColor;
     
-    void main() {
-      outColor = u_color;
-    }
-    `;
+    // void main() {
+    //   outColor = u_color;
+    // }
+    // `;
 
     this.program = this.createProgram(this.gl, vsSource, fsSource);
 

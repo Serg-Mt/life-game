@@ -6,7 +6,7 @@ type GeneratorType = (_: number, __: number) => Point[];
 
 const
   FPS = 60,
-  MS_FOR_FRAME = 1000 / FPS,
+  MS_FOR_FRAME = 1000 / FPS, 
   INFO_Timeout = 1000; // ms
 
 function format(x: number) {
@@ -65,6 +65,7 @@ export class SimulationManager {
   }
 
   setAlgo(Algo: SimulationStrategyClass) {
+    console.log('setAlgo');
     this.algoClass = Algo;
     this.regenerate();
   }

@@ -1,4 +1,9 @@
 import './style.sass'
 
-import './🦻listeners'
-import './init' // должно быть ниже listeners
+import { dispatchEventForInitSimManager } from './🦻listeners'
+import { simulationManager } from './manager';
+import { fillSelects } from './init';
+
+fillSelects();
+dispatchEventForInitSimManager();
+simulationManager.start();

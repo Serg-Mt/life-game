@@ -1,6 +1,6 @@
 import type { SimulationStrategyClass } from '../types';
-import { FastMapStrategy } from './fast-map';
 
+import { FastMapStrategy } from './fast-map';
 import { MapStrategy } from './map';
 import { QuickLifeStrategy } from './quick-life';
 

@@ -1,8 +1,8 @@
 import { runningState, stoppingState } from './data/ids.json'  with {type: "json"};
 
 import { generatorSelector, algorithmsSelector, renderSelector, startButton, stopButton, stateInput } from './dom';
-import { generators } from './generators';
 import { simulationManager } from './manager';
+import { generators } from './generators';
 import { renders } from './renders';
 import { algorithms } from './simulation';
 
@@ -33,6 +33,8 @@ simulationManager.eventTarget.addEventListener('changeState',
           : stoppingState)
 )
 
-generatorSelector.dispatchEvent(new Event('change'));
-algorithmsSelector.dispatchEvent(new Event('change'));
-renderSelector.dispatchEvent(new Event('change'));
+export function dispatchEventForInitSimManager() {
+  generatorSelector.dispatchEvent(new Event('change'));
+  algorithmsSelector.dispatchEvent(new Event('change'));
+  renderSelector.dispatchEvent(new Event('change'));
+}
